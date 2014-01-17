@@ -1,0 +1,8 @@
+*.project
+*.log
+.cproject
+.project
+cproject
+src/.cproject
+src/.project
+src/*.log
