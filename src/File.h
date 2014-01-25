@@ -42,6 +42,11 @@ public:
 	// empty it out
 	void EmptyItOut ();
 
+	// suck the contents of the record fromMe into this; note that after
+	// this call, fromMe will no longer have anything inside of it
+	void Consume (Page *fromMe);
+
+
 };
 
 

@@ -155,6 +155,10 @@ void Page :: FromBinary (char *bits) {
 	delete temp;
 }
 
+void Page :: Consume (Page *page) {
+	delete page;
+}
+
 File :: File () {
 }
 
