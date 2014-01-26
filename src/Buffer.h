@@ -38,14 +38,9 @@ class Buffer {
 		map<int, page_meta_info> page_table; // contains the meta information about the page
 
 		/*
-		 * Calculate the page number where the record needs to be added.
-		 * Returns the current page where the record needs to be read from/added
-		 * Page where the record has to be added can be at two places :
-		 * 1) in db file i.e on the disk
-		 * 2) in the buffer
-		 * If the page is in the db file fetch the page and add it into the map
+		 * Get the page number
 		 */
-		 Page * get_page( File *file, off_t num_records);
+		off_t get_page_number(off_t num_records, off_t record_size );
 
 		/*
 		 * Returns a new page.
@@ -77,8 +72,8 @@ class Buffer {
 		bool is_page_dirty(off_t page_number);
 
 		/*
-		 * Fetches the current page where the record needs to be added.
-		 * Attaches a new record to the end of the page fetched.
+		 * Attaches a new record to the end of the page passed.
+		 * if not able to add record. fetch a new page and attaches it there.
 		 * Returns 1 on success and 0 on failure
 		 */
 		void Buffer :: add_new_record( Page *page, Record *record);
@@ -88,9 +83,7 @@ class Buffer {
 		virtual ~Buffer();
 		/**
 		 * Attaches the given record to the current write_head node.
-		 * Checks if write_head contains the space for adding new record.
-		 * If yes add there else ask for a new page from get_new_page().
-		 * Returns 1 on success and 0 on failure.
+		 *
 		 */
 		void add( File *file, Record *record, off_t num_records);
 
@@ -104,7 +97,7 @@ class Buffer {
 		 * To read the curr_record number from the buffer.
 		 * Buffer knows if the current record is in file or buffer.
 		 */
-		void read_next( File *file, int curr_record);
+		void read_record( File *file, int curr_record);
 
 	};
 
