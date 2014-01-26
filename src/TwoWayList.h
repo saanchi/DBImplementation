@@ -1,11 +1,13 @@
 #ifndef _TWO_WAY_LIST_H
 #define _TWO_WAY_LIST_H
 
+
+class Buffer;
 template <class Type>
 class TwoWayList {
 
 	public:
-
+        friend class Buffer;
 		// basic constructor function
 		TwoWayList ();
 		
