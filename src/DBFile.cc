@@ -1,3 +1,4 @@
+#include<iostream>
 #include "TwoWayList.h"
 #include "Record.h"
 #include "Schema.h"
@@ -24,51 +25,6 @@ Return value from Create is a 1 on success and a zero on failure.
  
 */
 
-
-int DBFile::Create (char *f_path, fType f_type, void *startup) {
-	switch (f_type)
-	{
-		case Heap:
-		db_file=new  Heapfile(); 
-		db_file->Create(f_path,startup);
-		return 1;		
-		default:
-		break;
-	}
-	return 0;	
-}
-
-int DBFile::Open (char *f_path) {
-	db_file->Open(f_path);
-}
-
-
-int DBFile::GetNext (Record &fetchme, CNF &cnf, Record &literal) {
-	db_file->GetNext(fetchme,cnf,literal);
-	}
-
-void DBFile::MoveFirst () {
-	curPosition=0;	
-}
-
-int DBFile::GetNext (Record &fetchme) {
-	//GetNextcall Number Record..
-	db_file->GetNext(fetchme);
-}
-
-void DBFile::Load (Schema &f_schema, char *loadpath){
-    db_file->Load(f_schema,loadpath);
-}
-
-void DBFile::Add (Record &rec) {	
-	db_file->Add(rec);
-}
-
-int DBFile::Close () {
-	db_file->Close();
-}
-
-
 //#######################################################################################################################
 //######################################### Heap File#################################################################### 
 //#######################################################################################################################
@@ -80,10 +36,25 @@ to be located
 */
 
 
-int HeapFile::Create(char *f_path){
-    myFile.Open(0,f_path);
-    if(myFile.myFilDes<0)
-	   return 0;
+DBFile::DBFile()
+{
+	myFile=NULL;
+	readBuffer=NULL;
+	writeBuffer=NULL;
+	currPage=0;
+}
+
+
+
+int DBFile::Create(char *f_path, fType f_type, void *startup){
+	if(myFile==NULL)
+	{
+		//CreateFile(f_type);
+		myFile=new File;
+	}
+    myFile->Open(0,f_path);
+    //if(myFile->myFilDes<0)
+	  // return 0;
     return 1;	
 }
 
@@ -94,12 +65,16 @@ int HeapFile::Create(char *f_path){
  * The character string passed to Load is the name of the data file to bulk load
  */ 
 
-void HeapFile::Load(Schema &f_schema,char* loadpath)
+void DBFile::Load(Schema &f_schema,char* loadpath)
 {
 	Record temp;
-	while (temp.SuckNextRecord (f_Schema,loadpath)) {
-           db_file->Add(temp);           	  	
+	FILE *filepath=fopen(loadpath,"r");
+	int c=0;
+	while (temp.SuckNextRecord (&f_schema,filepath)) {
+		   c++;
+           Add(temp);          	  	
 	}
+	cout<<c<<endl;
 }
 
 
@@ -111,23 +86,54 @@ void HeapFile::Load(Schema &f_schema,char* loadpath)
  * 
  */
 
-int HeapFile::open(char *f_path)
+int DBFile::Open(char *f_path)
 {
-    myFile.Open(1,f_path);
-    if(!myFile)
-	   return 1;
-    return 0;
+	if(myFile==NULL)
+	{
+		//fType h=heap;
+		//CreateFile(h);
+		myFile=new File;
+	}
+   		
+    myFile->Open(1,f_path);
+    return 1;
 }
 
 /*
  *  Close simply closes the file. The return value is a 1 on success and a zero on failure.
 */
 
-int HeapFile::Close(){
-	myFile.close();
-	if(myFile)
-		return 1;
-	return 0;
+
+
+void DBFile::write_buffer()
+{
+	int pageNo=myFile->GetLength();
+	if(writeBuffer!=NULL)
+	{
+		myFile->AddPage(writeBuffer,pageNo);		
+		writeBuffer->EmptyItOut();
+	}
+}
+
+void DBFile::MoveFirst () {
+	currPage=0;	
+	//myFile->GetPage(readBuffer,currPage);
+}
+
+
+int DBFile::Close(){
+	write_buffer();
+	if(!myFile->Close())
+	{
+		cout<<"Error in close\n";
+		return 0;
+	}
+	else
+	{	
+	cout<<"close\n";	
+	delete myFile;
+	return 1;
+	}
 }
 
 /*
@@ -136,9 +142,20 @@ int HeapFile::Close(){
  */ 
 
 
-void HeapFile::Add (Record &rec) {
-	if(MyBuffer.Add(db_file,rec))
-	  totalCount++;
+void DBFile::Add (Record &rec) {
+	if(writeBuffer==NULL)
+	{
+		writeBuffer=new Page;
+		//myFile->AddPage(writeBuffer,0);
+	}
+	
+	while(!writeBuffer->Append(&rec))
+	{
+		int pageNo=myFile->GetLength();
+		myFile->AddPage(writeBuffer,pageNo);
+		writeBuffer->EmptyItOut();
+		cout<<pageNo<<"\n";
+	}
 }
 
 /*
@@ -149,14 +166,26 @@ void HeapFile::Add (Record &rec) {
  * call (which will be the case, for example, if the last record in the file has already been returned).
 */
 
-int HeapFile::GetNext (Record &fetchme) {
+int DBFile::GetNext (Record &fetchme) {
 	//GetNextcall Number Record..
-	if(MyBuffer.GetNext(db_file,fetchme,curPosition))
-		{
-			curPosition++;
-			return 1;
-		}
-     return 0;		
+	if(readBuffer==NULL)
+	{
+		readBuffer=new Page;
+		myFile->GetPage(readBuffer,currPage);
+		//cout<<currPage<<"\n";
+		//cout<<"Isme Bhi AAya\n";
+	}
+	//cout<<"Yaha AAya\n";
+	while(!readBuffer->GetFirst(&fetchme))
+	{
+		//cout<<"Loop ke Ander\n";
+		readBuffer->EmptyItOut();
+		currPage++;
+		if(currPage >= myFile->GetLength()-1)
+			return 0;
+		myFile->GetPage(readBuffer,currPage);
+	}
+	return 1;	
 }
 
 /*
@@ -167,10 +196,9 @@ created when the parse tree for the CNF is processed.
 */
 
 
-int HeapFile::GetNext (Record &fetchme, CNF &cnf, Record &literal) {
+int DBFile::GetNext (Record &fetchme, CNF &cnf, Record &literal) {
 	    ComparisonEngine comp;
-        while (1) {
-		db_file->GetNext(fetchme);
+        while (GetNext(fetchme)){
 		if (comp.Compare (&fetchme, &literal, &cnf))
 	       return 1;
 	}//end While

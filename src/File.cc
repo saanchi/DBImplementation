@@ -237,6 +237,7 @@ void File :: Open (int fileLen, char *fName) {
                 mode = O_RDWR;
 
 	// actually do the open
+	   cout<<"Fname="<<fName<<"\n";
         myFilDes = open (fName, mode, S_IRUSR | S_IWUSR);
 
 #ifdef verbose
