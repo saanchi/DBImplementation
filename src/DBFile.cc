@@ -25,16 +25,6 @@ Return value from Create is a 1 on success and a zero on failure.
  
 */
 
-//#######################################################################################################################
-//######################################### Heap File#################################################################### 
-//#######################################################################################################################
-
-
-
-/*First parameter to this function is a text string that tells you where the binary data is physically
-to be located
-*/
-
 
 DBFile::DBFile()
 {
@@ -74,7 +64,7 @@ void DBFile::Load(Schema &f_schema,char* loadpath)
 		   c++;
            Add(temp);          	  	
 	}
-	cout<<c<<endl;
+	//cout<<c<<endl;
 }
 
 
@@ -99,12 +89,6 @@ int DBFile::Open(char *f_path)
     return 1;
 }
 
-/*
- *  Close simply closes the file. The return value is a 1 on success and a zero on failure.
-*/
-
-
-
 void DBFile::write_buffer()
 {
 	int pageNo=myFile->GetLength();
@@ -120,6 +104,9 @@ void DBFile::MoveFirst () {
 	//myFile->GetPage(readBuffer,currPage);
 }
 
+/*
+ *  Close simply closes the file. The return value is a 1 on success and a zero on failure.
+*/
 
 int DBFile::Close(){
 	write_buffer();
@@ -130,7 +117,6 @@ int DBFile::Close(){
 	}
 	else
 	{	
-	cout<<"close\n";	
 	delete myFile;
 	return 1;
 	}
@@ -154,7 +140,7 @@ void DBFile::Add (Record &rec) {
 		int pageNo=myFile->GetLength();
 		myFile->AddPage(writeBuffer,pageNo);
 		writeBuffer->EmptyItOut();
-		cout<<pageNo<<"\n";
+		//cout<<pageNo<<"\n";
 	}
 }
 
@@ -172,13 +158,9 @@ int DBFile::GetNext (Record &fetchme) {
 	{
 		readBuffer=new Page;
 		myFile->GetPage(readBuffer,currPage);
-		//cout<<currPage<<"\n";
-		//cout<<"Isme Bhi AAya\n";
 	}
-	//cout<<"Yaha AAya\n";
 	while(!readBuffer->GetFirst(&fetchme))
 	{
-		//cout<<"Loop ke Ander\n";
 		readBuffer->EmptyItOut();
 		currPage++;
 		if(currPage >= myFile->GetLength()-1)
@@ -205,6 +187,3 @@ int DBFile::GetNext (Record &fetchme, CNF &cnf, Record &literal) {
 	    return 0;
 }
 
-//######################################################################################################################
-//###############################################End of Heap File#######################################################
-//######################################################################################################################
