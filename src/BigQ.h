@@ -8,40 +8,34 @@
 #include <queue>
 
 using namespace std;
-typedef pair<Record *, int> P;
+
+typedef pair<Record, int> P;
 
 class PairComparison{
-private :
-    OrderMaker *sort_order;
-    ComparisonEngine *comparison_engine;
 public :
-    PairComparison( OrderMaker *sort_order ){
-        this->sort_order        = sort_order;
-        this->comparison_engine = new ComparisonEngine;
-    }
-    bool operator()(P const& a, P const& b) const{
-        return comparison_engine->Compare( a.first, b.first, sort_order) <= 0;
-    }
+    ComparisonEngine *comparison_engine;
+    PairComparison();
+    bool operator()(P const& a, P const& b) const;
 };
 
 class BigQ {
 
 public:
 
+	pthread_t worker;            // Only worker thread
+	File *Y;                     // Temporary files used for external sorting.
+	vector<Page *> run_buffer;   // In-memory buffer for each of the 'm' runs
+	vector<off_t> run_offset;    // Store the offsets for the runs generated
+	// Objects passed as arguments to the BigQ constructor. Used by worker thread
+	Pipe in, out;              // Input pipe output pipe
+	int runlen;                  // Run length of Pages to be kept in memory
+	OrderMaker sortorder;       // Order maker object
+
     BigQ (Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen);
     ~BigQ ();
 
-private:
-    pthread_t worker;            // Only worker thread
-    File *Y;                     // Temporary files used for external sorting.
-    vector<Page *> run_buffer;   // In-memory buffer for each of the 'm' runs
-    vector<off_t> run_offset;    // Store the offsets for the runs generated
-    // Objects passed as arguments to the BigQ constructor
-    Pipe *in, *out;              // Input pipe output pipe
-    int runlen;                  // Run length of Pages to be kept in memory
-    OrderMaker *sortorder;       // Order maker object
 };
-
+static OrderMaker sortorder;
     /**
      * Starting point for thread.
      * Reads data from the input pipe.
@@ -54,7 +48,7 @@ private:
      * Read the sorted buffer into pages.
      * Write the pages into disk
      */
-    void write_buffer( File *Y, vector<Record *> buffer);
+    void write_buffer( File *Y, vector<Record> &buffer);
 
     /**
      * Implements Phase I of TPMMS.
