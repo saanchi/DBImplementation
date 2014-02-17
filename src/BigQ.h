@@ -9,7 +9,7 @@
 
 using namespace std;
 
-typedef pair<Record, int> P;
+typedef pair<Record*, int> P;
 
 class PairComparison{
 public :
@@ -24,10 +24,10 @@ public:
 
 	pthread_t worker;            // Only worker thread
 	File *Y;                     // Temporary files used for external sorting.
-	vector<Page *> run_buffer;   // In-memory buffer for each of the 'm' runs
-	vector<off_t> run_offset;    // Store the offsets for the runs generated
+	//vector<Page *> run_buffer;   // In-memory buffer for each of the 'm' runs
+	//vector<off_t> run_offset;    // Store the offsets for the runs generated
 	// Objects passed as arguments to the BigQ constructor. Used by worker thread
-	Pipe in, out;              // Input pipe output pipe
+	Pipe &in, &out;              // Input pipe output pipe
 	int runlen;                  // Run length of Pages to be kept in memory
 	OrderMaker sortorder;       // Order maker object
 
@@ -48,7 +48,7 @@ static OrderMaker sortorder;
      * Read the sorted buffer into pages.
      * Write the pages into disk
      */
-    void write_buffer( File *Y, vector<Record> &buffer);
+    void write_buffer( File *Y, vector<Record*> &buffer);
 
     /**
      * Implements Phase I of TPMMS.
